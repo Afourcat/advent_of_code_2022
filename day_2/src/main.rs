@@ -2,11 +2,31 @@ use std::str::FromStr;
 
 use anyhow::Context;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Copy)]
 enum Move {
     Rock,
     Paper,
     Scissors,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Copy)]
+enum RoundType {
+    Win,
+    Lose,
+    Draw,
+}
+
+impl FromStr for RoundType {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "X" => Ok(RoundType::Lose),
+            "Y" => Ok(RoundType::Draw),
+            "Z" => Ok(RoundType::Win),
+            _ => Err(anyhow::anyhow!("Invalid move")),
+        }
+    }
 }
 
 impl Move {
@@ -21,6 +41,18 @@ impl Move {
 
         println!("playing: {self:?} vs {other:?} => {result}");
         result
+    }
+
+    fn move_resulting_in(&self, rt: RoundType) -> Move {
+        match (rt, self) {
+            (RoundType::Win, Move::Rock) => Move::Paper,
+            (RoundType::Win, Move::Paper) => Move::Scissors,
+            (RoundType::Win, Move::Scissors) => Move::Rock,
+            (RoundType::Lose, Move::Rock) => Move::Scissors,
+            (RoundType::Lose, Move::Paper) => Move::Rock,
+            (RoundType::Lose, Move::Scissors) => Move::Paper,
+            (RoundType::Draw, _) => *self,
+        }
     }
 
     fn get_score(&self) -> u32 {
@@ -51,14 +83,15 @@ impl FromStr for Move {
 #[derive(Debug, Clone)]
 struct Round {
     play: Move,
-    response: Move,
+    round_type: RoundType,
 }
 
 impl Round {
     fn score(&self) -> u32 {
         let mut score = 0;
-        score += self.play.fight(&self.response);
-        score += self.response.get_score();
+        let response = self.play.move_resulting_in(self.round_type);
+        score += self.play.fight(&response);
+        score += response.get_score();
         score
     }
 }
@@ -70,8 +103,8 @@ impl FromStr for Round {
         let mut splitted = s.split_whitespace();
 
         let play = Move::from_str(splitted.next().context("invalid line")?)?;
-        let response = Move::from_str(splitted.next().context("invalid line")?)?;
-        Ok(Round { play, response })
+        let round_type = RoundType::from_str(splitted.next().context("invalid line")?)?;
+        Ok(Round { play, round_type })
     }
 }
 
