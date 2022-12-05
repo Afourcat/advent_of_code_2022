@@ -12,6 +12,11 @@ impl Group {
     fn one_contains_the_other(&self) -> bool {
         fully_contains(&self.first, &self.second) || fully_contains(&self.second, &self.first)
     }
+
+    fn overlaping(&self) -> bool {
+        (self.first.start <= self.second.start && self.first.end >= self.second.start)
+            || (self.second.start <= self.first.start && self.second.end >= self.first.start)
+    }
 }
 
 fn fully_contains(this: &Range<usize>, other: &Range<usize>) -> bool {
@@ -55,11 +60,9 @@ fn main() -> anyhow::Result<()> {
         .filter_map(Result::ok)
         .collect::<Vec<Group>>();
 
-    println!("{:#?}", groups);
-
     let count = groups
         .iter()
-        .map(|group| group.one_contains_the_other())
+        .map(|group| group.overlaping())
         .filter(|&bool| bool)
         .count();
 
