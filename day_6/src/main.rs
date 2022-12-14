@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use anyhow::Context;
 
-const WINDOW_SIZE: usize = 4;
+const WINDOW_SIZE: usize = 14;
 
 fn main() -> anyhow::Result<()> {
     let file_path = std::env::args()
@@ -13,15 +13,7 @@ fn main() -> anyhow::Result<()> {
         .chars()
         .collect::<Vec<_>>()
         .windows(WINDOW_SIZE)
-        .position(|w| {
-            println!("{w:?}");
-            w[0] != w[1]
-                && w[0] != w[2]
-                && w[0] != w[3]
-                && w[1] != w[2]
-                && w[1] != w[3]
-                && w[2] != w[3]
-        })
+        .position(|w| w.iter().collect::<std::collections::HashSet<_>>().len() == WINDOW_SIZE)
         .context("no solution found")?
         + WINDOW_SIZE;
 
